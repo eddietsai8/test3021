@@ -1,7 +1,7 @@
 {
   "name": "PWA 推播測試",
   "short_name": "PWA",
-  "start_url": "/",
+  "start_url": "/test3021",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
