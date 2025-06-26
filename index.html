@@ -1,61 +1,66 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CryptoX - Welcome</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f0f4f8, #d9e4f5);
-            color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .container {
-            text-align: center;
-            padding: 40px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
-        }
-        h1 {
-            font-size: 2.5em;
-            margin-bottom: 20px;
-            color: #2b6cb0;
-        }
-        p {
-            font-size: 1.1em;
-            margin-bottom: 30px;
-            color: #555;
-        }
-        .btn {
-            background: #2b6cb0;
-            color: white;
-            padding: 15px 40px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.2em;
-            cursor: pointer;
-            transition: background 0.3s;
-            text-decoration: none;
-            display: inline-block;
-        }
-        .btn:hover {
-            background: #1a4d80;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>VAPID 推播測試</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 </head>
 <body>
-    <div class="container">
-        <h1>CryptoX</h1>
-        <p>簡單、安全、快速的虛擬幣交易體驗</p>
-        <a href="https://your-real-site.com" class="btn">進入正式網站</a>
-    </div>
+  <h1>VAPID 推播測試</h1>
+  <button id="subscribeBtn">啟用推播</button>
+  <script>
+    async function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const rawData = window.atob(base64);
+      return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if ('serviceWorker' in navigator) {
+        await navigator.serviceWorker.register('/sw.js');
+        console.log('✅ Service Worker 已註冊');
+      }
+
+      document.getElementById('subscribeBtn').addEventListener('click', async () => {
+        try {
+          const permission = await Notification.requestPermission();
+          if (permission !== 'granted') {
+            alert('未授權通知');
+            return;
+          }
+
+          const vapidKeyResp = await fetch('/vapidPublicKey');
+          const vapidKey = (await vapidKeyResp.json()).key;
+          const appServerKey = await urlBase64ToUint8Array(vapidKey);
+
+          const reg = await navigator.serviceWorker.ready;
+          const subscription = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: appServerKey
+          });
+
+          console.log('������ 訂閱資訊:', subscription);
+
+          await fetch('/push', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(subscription)
+          });
+
+          alert('✅ 訂閱成功！');
+        } catch (e) {
+          console.error('❌ 推播訂閱錯誤:', e);
+        }
+      });
+    });
+  </script>
 </body>
 </html>
+
